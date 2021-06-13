@@ -327,13 +327,13 @@ zio_checksum_verify(const spa_t *spa, const blkptr_t *bp, void *data)
 
 	if (!ZIO_CHECKSUM_EQUAL(actual_cksum, expected_cksum)) {
 		printf("ZFS: read checksum %s failed\n", ci->ci_name);
+#if 0
 		printf("ZFS: expected 0x%016x 0x%016x 0x%016x 0x%016x\n",
 		    expected_cksum.zc_word[0], expected_cksum.zc_word[1],
 		    expected_cksum.zc_word[2], expected_cksum.zc_word[3]);
 		printf("ZFS: actual   0x%016x 0x%016x 0x%016x 0x%016x\n",
 		    actual_cksum.zc_word[0], actual_cksum.zc_word[1],
 		    actual_cksum.zc_word[2], actual_cksum.zc_word[3]);
-#if 0
 		return (EIO);
 #endif
 	}

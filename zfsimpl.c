@@ -131,6 +131,8 @@ static const char *features_for_read[] = {
 	NULL
 };
 
+uint64_t use_txg;
+
 /*
  * List of all pools, chained through spa_link.
  */
@@ -2005,6 +2007,7 @@ vdev_uberblock_load(vdev_t *vd, uberblock_t *ub)
 	buf = malloc(VDEV_UBERBLOCK_SIZE(vd));
 	if (buf == NULL)
 		return;
+	memset(buf, '\0', VDEV_UBERBLOCK_SIZE(vd));
 
 	for (int l = 0; l < VDEV_LABELS; l++) {
 		for (int n = 0; n < VDEV_UBERBLOCK_COUNT(vd); n++) {
@@ -2015,11 +2018,19 @@ vdev_uberblock_load(vdev_t *vd, uberblock_t *ub)
 			if (uberblock_verify(buf) != 0)
 				continue;
 
+			if (use_txg > 0 && buf->ub_txg == use_txg) {
+				*ub = *buf;
+				break;
+			}
+
 			if (vdev_uberblock_compare(buf, ub) > 0)
 				*ub = *buf;
 		}
 	}
 	free(buf);
+
+	if (use_txg > 0 && ub->ub_txg != use_txg)
+		fprintf(stderr, "Could't use txg %llu\n", use_txg);
 }
 
 uint64_t

@@ -16,6 +16,7 @@ struct zfsmount {
 	uint64_t	rootobj;
 };
 
+extern uint64_t use_txg;
 extern int vdev_probe(vdev_phys_read_t *, vdev_phys_write_t *, void *,
     spa_t **);
 extern void zfs_init(void);
@@ -52,7 +53,8 @@ main(int argc, char **argv)
 	FILE *outf = NULL;
 	spa_t *spa = NULL;
 	int devfd = -1;
-	int ret;
+	int ret, c;
+	uint64_t txg = 0;
 	uint64_t objset_id;
 	struct zfsmount mnt = { 0 };
 	struct open_file f = { 0 };
@@ -65,10 +67,23 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	device = argv[1];
-	dataset = argv[2];
-	file = argv[3];
-	out = argv[4];
+	while ((c = getopt(argc, argv, "t:")) != -1) {
+		switch (c) {
+		case 't':
+			errno = 0;
+			txg = strtoull(optarg, NULL, 10);
+			if (errno != 0)
+				err(EXIT_FAILURE, "invalid txg '%s'", optarg);
+			if (txg > 0)
+				use_txg = txg;
+			break;
+		}
+	}
+
+	device = argv[optind];
+	dataset = argv[optind+1];
+	file = argv[optind+2];
+	out = argv[optind+3];
 
 	if ((devfd = open(device, O_RDONLY)) == -1)
 		err(EXIT_FAILURE, "%s", argv[1]);
