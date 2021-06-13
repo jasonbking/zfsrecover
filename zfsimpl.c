@@ -238,8 +238,9 @@ vdev_read_phys(vdev_t *vdev, const blkptr_t *bp, void *buf,
 
 	rc = vdev->v_phys_read(vdev, vdev->v_priv, offset, buf, psize);
 	if (rc == 0) {
-		if (bp != NULL)
+		if (bp != NULL) {
 			rc = zio_checksum_verify(vdev->v_spa, bp, buf);
+		}
 	}
 
 	return (rc);
@@ -1942,14 +1943,18 @@ vdev_label_read_config(vdev_t *vd, uint64_t txg)
 	int error;
 
 	label = malloc(sizeof (vdev_phys_t));
-	if (label == NULL)
+	if (label == NULL) {
+		err(EXIT_FAILURE, "malloc failed");
 		return (NULL);
+	}
 
 	for (int l = 0; l < VDEV_LABELS; l++) {
 		if (vdev_label_read(vd, l, label,
 		    offsetof(vdev_label_t, vl_vdev_phys),
 		    sizeof (vdev_phys_t)))
 			continue;
+
+		fprintf(stderr, "Read label %d\n", l);
 
 		tmp = nvlist_import(label->vp_nvlist,
 		    sizeof (label->vp_nvlist));
@@ -1959,6 +1964,7 @@ vdev_label_read_config(vdev_t *vd, uint64_t txg)
 		error = nvlist_find(tmp, ZPOOL_CONFIG_POOL_TXG,
 		    DATA_TYPE_UINT64, NULL, &label_txg, NULL);
 		if (error != 0 || label_txg == 0) {
+			fprintf(stderr, "nvlist_find failed %d\n", __LINE__);
 			nvlist_destroy(nvl);
 			nvl = tmp;
 			goto done;
@@ -2351,7 +2357,10 @@ zio_read(const spa_t *spa, const blkptr_t *bp, void *buf)
 				    BP_GET_PSIZE(bp), buf, BP_GET_LSIZE(bp));
 			else if (size != BP_GET_PSIZE(bp))
 				bcopy(pbuf, buf, BP_GET_PSIZE(bp));
+		} else {
+			printf("ZFS: error reading bp %d\n", i);
 		}
+
 		if (buf != pbuf)
 			free(pbuf);
 		if (error == 0)
@@ -3488,7 +3497,7 @@ load_nvlist(spa_t *spa, uint64_t obj, nvlist_t **value)
 	return (rc);
 }
 
-static int
+int
 zfs_spa_init(spa_t *spa)
 {
 	dnode_phys_t dir;

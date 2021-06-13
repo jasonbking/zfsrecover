@@ -19,6 +19,7 @@ struct zfsmount {
 extern int vdev_probe(vdev_phys_read_t *, vdev_phys_write_t *, void *,
     spa_t **);
 extern void zfs_init(void);
+extern int zfs_spa_init(spa_t *);
 extern int zfs_lookup_dataset(const spa_t *, const char *, uint64_t *);
 extern int zfs_mount(const spa_t *, uint64_t, struct zfsmount *);
 extern int zfs_open(const char *, struct open_file *);
@@ -32,7 +33,7 @@ my_phys_read(struct vdev *v, void *priv, off_t offset, void *buf, size_t psize)
 	int fd = (int)(uintptr_t)priv;
 
 	n = pread(fd, buf, psize, offset);
-	return (n);
+	return (n > 0 ? 0 : errno);
 }
 
 int
@@ -82,7 +83,13 @@ main(int argc, char **argv)
 		errno = ret;
 		err(EXIT_FAILURE, "vdev_probe failed");
 	}
-	
+
+	ret = zfs_spa_init(spa);
+	if (ret != 0) {
+		errno = ret;
+		err(EXIT_FAILURE, "zfs_spa_init() failed");
+	}
+
 	ret = zfs_lookup_dataset(spa, dataset, &objset_id);
 	if (ret != 0)
 		errx(EXIT_FAILURE, "zfs_lookup_dataset(%s) failed", dataset);
