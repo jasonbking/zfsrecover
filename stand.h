@@ -343,7 +343,6 @@ extern void	nullsys(void);
 extern int	null_open(const char *, struct open_file *);
 extern int	null_close(struct open_file *);
 extern int	null_read(struct open_file *, void *, size_t, size_t *);
-extern int	null_write(struct open_file *, const void *, size_t, size_t *);
 extern off_t	null_seek(struct open_file *, off_t, int);
 extern int	null_stat(struct open_file *, struct stat *);
 extern int	null_readdir(struct open_file *, struct dirent *);

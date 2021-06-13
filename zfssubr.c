@@ -23,6 +23,8 @@
  * Use is subject to license terms.
  */
 
+#include <stdlib.h>
+#include <err.h>
 #include "lz4.h"
 
 static uint64_t zfs_crc64_table[256];
@@ -678,7 +680,7 @@ vdev_raidz_generate_parity(raidz_map_t *rm)
 		vdev_raidz_generate_parity_pqr(rm);
 		break;
 	default:
-		panic("invalid RAID-Z configuration");
+		errx(EXIT_FAILURE, "invalid RAID-Z configuration");
 	}
 }
 

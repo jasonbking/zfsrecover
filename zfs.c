@@ -65,6 +65,7 @@ int	zfs_read(struct open_file *, void *, size_t, size_t *);
 static off_t	zfs_seek(struct open_file *, off_t, int);
 int	zfs_stat(struct open_file *, struct stat *);
 static int	zfs_readdir(struct open_file *, struct dirent *);
+static int	null_write(struct open_file *, const void *, size_t, size_t *);
 
 struct devsw zfs_dev;
 
@@ -97,6 +98,12 @@ struct zfs_be_entry {
 	const char *name;
 	SLIST_ENTRY(zfs_be_entry) entries;
 } *zfs_be, *zfs_be_tmp;
+
+static int
+null_write(struct open_file *f, const void *buf, size_t off, size_t *resid)
+{
+	return (0);
+}
 
 /*
  * Open a file.
@@ -1466,6 +1473,7 @@ zfs_probe_dev(const char *devname, uint64_t *pool_guid)
 	return (ret);
 }
 
+#if 0
 /*
  * Print information about ZFS pools
  */
@@ -1494,6 +1502,7 @@ zfs_dev_print(int verbose)
 	}
 	return (ret);
 }
+#endif
 
 /*
  * Attempt to open the pool described by (dev) for use by (f).

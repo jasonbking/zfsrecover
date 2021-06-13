@@ -78,8 +78,10 @@ main(int argc, char **argv)
 	zfs_init();
 	ret = vdev_probe(my_phys_read, my_phys_write, (void *)(uintptr_t)devfd,
 	    &spa);
-	if (ret != 0)
-		errx(EXIT_FAILURE, "vdev_probe failed");
+	if (ret != 0) {
+		errno = ret;
+		err(EXIT_FAILURE, "vdev_probe failed");
+	}
 	
 	ret = zfs_lookup_dataset(spa, dataset, &objset_id);
 	if (ret != 0)

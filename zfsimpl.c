@@ -32,8 +32,10 @@
 #include <sys/stat.h>
 #include <sys/stdint.h>
 #include <sys/list.h>
+#include <sys/dkio.h>
 #include <inttypes.h>
 #include <netinet/in.h>
+#include <err.h>
 
 #include "stand.h"
 #include "zfsimpl.h"
@@ -1423,6 +1425,7 @@ state_name(vdev_state_t state)
 	return (names[state]);
 }
 
+#if 0
 static int
 pager_printf(const char *fmt, ...)
 {
@@ -1434,9 +1437,11 @@ pager_printf(const char *fmt, ...)
 	va_end(args);
 	return (pager_output(line));
 }
+#endif
 
 #define	STATUS_FORMAT	"        %s %s\n"
 
+#if 0
 static int
 print_state(int indent, const char *name, vdev_state_t state)
 {
@@ -1554,6 +1559,7 @@ spa_all_status(void)
 	}
 	return (ret);
 }
+#endif
 
 uint64_t
 vdev_label_offset(uint64_t psize, int l, uint64_t offset)
@@ -2010,6 +2016,21 @@ vdev_uberblock_load(vdev_t *vd, uberblock_t *ub)
 	free(buf);
 }
 
+uint64_t
+ldi_get_size(void *p)
+{
+	struct dk_minfo dkm = { 0 };
+	uint64_t size;
+	int fd = (uintptr_t)p;
+
+	if (ioctl(fd, DKIOCGMEDIAINFO, &dkm) < 0)
+		err(EXIT_FAILURE, "ioctl(DKIOCGMEDIAINFO)");
+
+	size = (uint64_t)dkm.dki_capacity * dkm.dki_lbsize;
+	fprintf(stderr, "Dev size: %llu\n", size);
+	return (size);
+}
+
 int
 vdev_probe(vdev_phys_read_t *_read, vdev_phys_write_t *_write, void *priv,
     spa_t **spap)
@@ -2036,21 +2057,27 @@ vdev_probe(vdev_phys_read_t *_read, vdev_phys_write_t *_write, void *priv,
 	    (uint64_t)sizeof (vdev_label_t));
 
 	/* Test for minimum device size. */
-	if (vtmp.v_psize < SPA_MINDEVSIZE)
+	if (vtmp.v_psize < SPA_MINDEVSIZE) {
+		fprintf(stderr, "ERROR: dev size < SPA_MINDEVSIZE\n");
 		return (EIO);
+	}
 
 	nvl = vdev_label_read_config(&vtmp, UINT64_MAX);
-	if (nvl == NULL)
+	if (nvl == NULL) {
+		fprintf(stderr, "vdev_label_read_config failed\n");
 		return (EIO);
+	}
 
 	if (nvlist_find(nvl, ZPOOL_CONFIG_VERSION, DATA_TYPE_UINT64,
 	    NULL, &val, NULL) != 0) {
 		nvlist_destroy(nvl);
+		fprintf(stderr, "nvlist_find failed %d\n", __LINE__);
 		return (EIO);
 	}
 
 	if (!SPA_VERSION_IS_SUPPORTED(val)) {
-		printf("ZFS: unsupported ZFS version %u (should be %u)\n",
+		fprintf(stderr,
+		    "ZFS: unsupported ZFS version %u (should be %u)\n",
 		    (unsigned)val, (unsigned)SPA_VERSION);
 		nvlist_destroy(nvl);
 		return (EIO);
@@ -2059,17 +2086,20 @@ vdev_probe(vdev_phys_read_t *_read, vdev_phys_write_t *_write, void *priv,
 	/* Check ZFS features for read */
 	rc = nvlist_check_features_for_read(nvl);
 	if (rc != 0) {
+		fprintf(stderr, "nvlist_check_features_for_read failed\n");
 		nvlist_destroy(nvl);
 		return (EIO);
 	}
 
 	if (nvlist_find(nvl, ZPOOL_CONFIG_POOL_STATE, DATA_TYPE_UINT64,
 	    NULL, &val, NULL) != 0) {
+		fprintf(stderr, "nvlist_find failed %s\n", __LINE__);
 		nvlist_destroy(nvl);
 		return (EIO);
 	}
 
 	if (val == POOL_STATE_DESTROYED) {
+		fprintf(stderr, "Pool state is destroyed\n");
 		/* We don't boot only from destroyed pools. */
 		nvlist_destroy(nvl);
 		return (EIO);
@@ -2085,6 +2115,7 @@ vdev_probe(vdev_phys_read_t *_read, vdev_phys_write_t *_write, void *priv,
 		 * Cache and spare devices end up here - just ignore
 		 * them.
 		 */
+		fprintf(stderr, "Couldn't get pool config\n");
 		nvlist_destroy(nvl);
 		return (EIO);
 	}
@@ -2124,12 +2155,14 @@ vdev_probe(vdev_phys_read_t *_read, vdev_phys_write_t *_write, void *priv,
 	 */
 	if (nvlist_find(nvl, ZPOOL_CONFIG_GUID, DATA_TYPE_UINT64,
 	    NULL, &guid, NULL) != 0) {
+		fprintf(stderr, "nvlist find failed %d\n", __LINE__);
 		nvlist_destroy(nvl);
 		return (EIO);
 	}
 	vdev = vdev_find(guid);
 	/* Has this vdev already been inited? */
 	if (vdev && vdev->v_phys_read) {
+		fprintf(stderr, "already inited\n");
 		nvlist_destroy(nvl);
 		return (EIO);
 	}
@@ -2155,7 +2188,7 @@ vdev_probe(vdev_phys_read_t *_read, vdev_phys_write_t *_write, void *priv,
 		if (vdev->v_state == VDEV_STATE_UNKNOWN)
 			vdev->v_state = VDEV_STATE_HEALTHY;
 	} else {
-		printf("ZFS: inconsistent nvlist contents\n");
+		fprintf(stderr, "ZFS: inconsistent nvlist contents\n");
 		return (EIO);
 	}
 
