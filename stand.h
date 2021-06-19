@@ -352,7 +352,7 @@ extern int	ischar(void);
 extern int	devopen(struct open_file *, const char *, const char **);
 extern int	devclose(struct open_file *f);
 extern void	panic(const char *, ...) __NORETURN;
-extern void	panic_action(void) __weak_symbol __NORETURN;
+extern void	panic_action(void) __NORETURN;
 extern time_t	getsecs(void);
 extern struct fs_ops	*file_system[];
 extern struct fs_ops	*exclusive_file_system;

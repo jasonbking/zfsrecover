@@ -1,13 +1,14 @@
 CC = gcc
-SRC = zfs.c recover.c lz4.c fletcher.c list.c gzip.c nvlist.c
+SRC = zfs.c recover.c lz4.c fletcher.c list.c gzip.c nvlist.c edonr.c \
+      skein_block.c skein_iv.c skein.c
 OBJS = $(SRC:%.c=%.o)
 
-CFLAGS=-m64 -std=gnu99 -g -msave-args
+CPPFLAGS=-I.
+CFLAGS=-std=gnu99 -m64 -g
 LDLIBS=-lmd -lz
 
 recover: $(OBJS)
-	$(CC) -o recover $(OBJS) $(LDLIBS)
-	ctfconvert recover
+	$(CC) $(CFLAGS) -o recover $(OBJS) $(LDLIBS)
 
 clean:
-	-rm -f *.o
+	-rm -f *.o recover

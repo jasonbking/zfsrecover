@@ -148,3 +148,15 @@ main(int argc, char **argv)
 	close(devfd);
 	return (0);
 }
+
+void *
+zalloc(size_t len)
+{
+	void *p = malloc(len);
+
+	if (p == NULL)
+		return (p);
+
+	(void) memset(p, '\0', len);
+	return (p);
+}

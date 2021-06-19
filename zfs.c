@@ -48,6 +48,13 @@
 #define	MIN(a,b) (((a)<(b))?(a):(b))
 #define	MAX(a,b) (((a)>(b))?(a):(b))
 
+extern void *zalloc(size_t);
+#define	malloc(x) zalloc(x)
+
+#ifndef NBBY
+#define	NBBY 8
+#endif
+
 #include "zfs_bootenv.h"
 #include "libzfs.h"
 
