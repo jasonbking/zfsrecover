@@ -41,8 +41,18 @@
 #define	OFFSET_MASK	((1 << (16 - MATCH_BITS)) - 1)
 #define	LEMPEL_SIZE	256
 
+#include <stddef.h>
+
+#ifndef __unused
+#define	__unused __attribute__((unused))
+#endif
+
+#ifndef NBBY
+#define	NBBY 8
+#endif
+
 /*ARGSUSED*/
-static int
+int
 lzjb_decompress(void *s_start, void *d_start, size_t s_len __unused,
     size_t d_len, int n __unused)
 {

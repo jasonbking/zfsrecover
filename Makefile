@@ -7,8 +7,13 @@ CPPFLAGS=-I.
 CFLAGS=-std=gnu99 -m64 -g
 LDLIBS=-lmd -lz
 
+all: recover search
+
 recover: $(OBJS)
 	$(CC) $(CFLAGS) -o recover $(OBJS) $(LDLIBS)
 
+search: search.o lzjb.o
+	$(CC) $(CFLAGS) -o search search.o lzjb.o
+
 clean:
-	-rm -f *.o recover
+	-rm -f *.o recover search
