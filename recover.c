@@ -142,6 +142,8 @@ main(int argc, char **argv)
 		n += amt;
 	}
 
+	fchown(fileno(outf), sb.st_uid, sb.st_gid);
+	fchmod(fileno(outf), sb.st_mode & S_IAMB);
 	fclose(outf);
 	close(devfd);
 	return (0);
